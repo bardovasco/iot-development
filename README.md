@@ -1,7 +1,7 @@
-# ESP8266 and ESP32 - IoT Development
+# esp8266 and esp32 - IoT Development
 
-### The ESP8266 sample has been developed using MicroPython.
+### The esp8266 sample has been developed using MicroPython.
 
-### The ESP32 sample has been developed using the core APIs that _espressif_ provides (_ESP IDF_).
+### The esp32 sample has been developed using the core APIs that _espressif_ provides (_esp IDF_).
 
 TODO: Update readme.
