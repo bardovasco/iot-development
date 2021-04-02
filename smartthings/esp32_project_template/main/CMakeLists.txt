@@ -1,4 +1,5 @@
 idf_component_register(SRCS "main.c"
+			    "device_control.c"
                     EMBED_FILES "device_info.json"
                                 "onboarding_config.json"
                     )
