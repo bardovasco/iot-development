@@ -76,8 +76,12 @@ class PushButton:
                 if self.state != pressed and time.ticks_diff(time.ticks_ms(), t_out) > self.sp_to:
                     if self.sp_cb:
                         self.sp_cb(p_count=p_count, tick=time.ticks_ms()) # call short press callback
+                    else:
+                        print('no callback, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
                     p_count = 0
                 elif self.state == pressed and time.ticks_diff(time.ticks_ms(), t_out) > self.lp_to:
                     if self.lp_cb:
                         self.lp_cb(tick=time.ticks_ms()) # call long press callback
+                    else:
+                        print('no callback, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
                     p_count = 0
