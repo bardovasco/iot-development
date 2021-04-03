@@ -60,7 +60,6 @@ class PushButton:
 
     async def get_button_event(self):
         t_out = None # Timeout handler
-        pressed = 1
         p_count = 0
 
         while True:
@@ -69,19 +68,19 @@ class PushButton:
             if last_state != self.state:
                 await asyncio.sleep_ms(self.debounce)
                 self.state = last_state
-                if self.state == pressed:
+                if self.state == 1:
                     t_out = time.ticks_ms()  # init timeout
                     p_count += 1
             elif p_count > 0:
-                if self.state != pressed and time.ticks_diff(time.ticks_ms(), t_out) > self.sp_to:
+                if self.state != 1 and time.ticks_diff(time.ticks_ms(), t_out) > self.sp_to:
                     if self.sp_cb:
                         self.sp_cb(p_count=p_count, tick=time.ticks_ms()) # call short press callback
                     else:
-                        print('no callback, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
+                        print('sp_cb, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
                     p_count = 0
-                elif self.state == pressed and time.ticks_diff(time.ticks_ms(), t_out) > self.lp_to:
+                elif self.state == 1 and time.ticks_diff(time.ticks_ms(), t_out) > self.lp_to:
                     if self.lp_cb:
                         self.lp_cb(tick=time.ticks_ms()) # call long press callback
                     else:
-                        print('no callback, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
+                        print('lp_cb, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
                     p_count = 0
