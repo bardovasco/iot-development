@@ -47,8 +47,8 @@ class PushButton:
     def __init__(self, pin, cb=None, spto=700, lpto=1500):
         self.pin = pin
         self.cb = cb                    # Callback
-        self.spto = spto              # Short press timeout
-        self.lpto = lpto              # Long press timeout
+        self.spto = spto                # Short press timeout
+        self.lpto = lpto                # Long press timeout
         self.db = 100                   # debounce ms
         self.sense = self.pin.value()   # Def logical state
         self.p = self.rawstate()        # pressed state
