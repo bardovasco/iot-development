@@ -19,39 +19,39 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-"""
-@@@ Micropython & ESP32/ESP8266 PushButton @@@
 
-This module grants the flexibility to customize
-the supported button values by the implementation
-(i.e. simple, double, triple, etc) by taking
-receiving callbacks for short and long presses
-accordingly.
-Once their respective timeouts have expired, the
-callback will be executed receiving the following
-keyword arguments:
-
-    sp_cb(p_count: int, tick: int) # short press callback
-    lp_cb(tick: int)               # long press callback
-
-Additionally, as this class works as a coroutine,
-once the PushButton object gets instantiated, a new
-task/coro will be created as well.
-"""
+# @@@ Micropython & ESP32/ESP8266 PushButton @@@
+#
+# This module grants the flexibility to customize
+# the supported button values by the implementation
+# (i.e. simple, double, triple, etc) by taking
+# receiving callbacks for short and long presses
+# accordingly.
+# Once their respective timeouts have expired, the
+# callback will be executed receiving the following
+# keyword arguments:
+#
+#     self.cb(
+#         evt:str,
+#         cnt:int,
+#         tick: int)
+#
+# Additionally, as this class works as a coroutine,
+# once the PushButton object gets instantiated, a new
+# task/coro will be created as well.
 import uasyncio as asyncio
 import utime as time
 
 
 class PushButton:
-    def __init__(self, pin, sp_cb=None, lp_cb=None, sp_to=800, lp_to=2000):
+    def __init__(self, pin, cb=None, spto=700, lpto=1500):
         self.pin = pin
-        self.sp_cb = sp_cb              # Short press callback
-        self.lp_cb = lp_cb              # Long press callback
-        self.sp_to = sp_to              # Short press timeout
-        self.lp_to = lp_to              # Long press timeout
-        self.debounce = 300             # ms
+        self.cb = cb                    # Callback
+        self.spto = spto              # Short press timeout
+        self.lpto = lpto              # Long press timeout
+        self.db = 100                   # debounce ms
         self.sense = self.pin.value()   # Def logical state
-        self.state = self.rawstate()    # Initial state
+        self.p = self.rawstate()        # pressed state
         # Create task
         asyncio.create_task(self.get_button_event())
 
@@ -60,27 +60,28 @@ class PushButton:
 
     async def get_button_event(self):
         t_out = None # Timeout handler
-        p_count = 0
+        cnt = 0
 
         while True:
-            last_state = self.rawstate()
+            state = self.rawstate()
 
-            if last_state != self.state:
-                await asyncio.sleep_ms(self.debounce)
-                self.state = last_state
-                if self.state == 1:
+            if state != self.p:
+                await asyncio.sleep_ms(self.db)
+                self.p = state
+                if self.p:
                     t_out = time.ticks_ms()  # init timeout
-                    p_count += 1
-            elif p_count > 0:
-                if self.state != 1 and time.ticks_diff(time.ticks_ms(), t_out) > self.sp_to:
-                    if self.sp_cb:
-                        self.sp_cb(p_count=p_count, tick=time.ticks_ms()) # call short press callback
+                    cnt += 1
+            elif cnt > 0:
+                if not self.p and time.ticks_diff(time.ticks_ms(), t_out) > self.spto:
+                    if self.cb:
+                        self.cb(evt='short press', cnt=cnt, tick=time.ticks_ms()) # short press event
                     else:
-                        print('sp_cb, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
-                    p_count = 0
-                elif self.state == 1 and time.ticks_diff(time.ticks_ms(), t_out) > self.lp_to:
-                    if self.lp_cb:
-                        self.lp_cb(tick=time.ticks_ms()) # call long press callback
+                        print('short press, cnt: %i, tick: %i' % (cnt, time.ticks_ms()))
+                    cnt = 0
+                elif self.p and time.ticks_diff(time.ticks_ms(), t_out) > self.lpto:
+                    if self.cb:
+                        self.cb(evt='long press', cnt=cnt, tick=time.ticks_ms()) # long press event
                     else:
-                        print('lp_cb, p_count: %i, tick: %i' % (p_count, time.ticks_ms()))
-                    p_count = 0
+                        print('long press, tick: %i' % time.ticks_ms())
+                    cnt = 0
+
