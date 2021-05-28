@@ -53,35 +53,44 @@ class PushButton:
         self.sense = self.pin.value()   # Def logical state
         self.p = self.rawstate()        # pressed state
         # Create task
-        asyncio.create_task(self.get_button_event())
+        asyncio.create_task(self.read_btn())
 
     def rawstate(self):
         return bool(self.pin.value() ^ self.sense)
 
-    async def get_button_event(self):
-        t_out = None # Timeout handler
+    def is_tout(self, t_out, limit):
+        t = time.ticks_diff(time.ticks_ms(), t_out)
+        return t > limit
+
+    async def read_btn(self):
+        evt = None
+        t_out = None
         cnt = 0
 
         while True:
             state = self.rawstate()
 
             if state != self.p:
-                await asyncio.sleep_ms(self.db)
+                await asyncio.sleep_ms(self.db) # debounce press
                 self.p = state
                 if self.p:
-                    t_out = time.ticks_ms()  # init timeout
+                    # init timeout and
+                    # press counts
+                    t_out = time.ticks_ms()
                     cnt += 1
             elif cnt > 0:
                 if not self.p and time.ticks_diff(time.ticks_ms(), t_out) > self.spto:
+                    evt = 'short'
                     if self.cb:
-                        self.cb(evt='short press', cnt=cnt, tick=time.ticks_ms()) # short press event
+                        self.cb(evt=evt, cnt=cnt, tick=time.ticks_ms())
                     else:
-                        print('short press, cnt: %i, tick: %i' % (cnt, time.ticks_ms()))
+                        print('evt: %s, cnt: %i, tick: %i' % (evt, cnt, time.ticks_ms()))
                     cnt = 0
                 elif self.p and time.ticks_diff(time.ticks_ms(), t_out) > self.lpto:
+                    evt = 'long'
                     if self.cb:
-                        self.cb(evt='long press', cnt=cnt, tick=time.ticks_ms()) # long press event
+                        self.cb(evt=evt, cnt=cnt, tick=time.ticks_ms())
                     else:
-                        print('long press, tick: %i' % time.ticks_ms())
+                        print('evt: %s, cnt: %i, tick: %i' % (evt, cnt, time.ticks_ms()))
                     cnt = 0
 
